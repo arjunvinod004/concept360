@@ -1,0 +1,254 @@
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+}
+
+.enquiry {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color: #f5f5f5;
+}
+
+.phone-container {
+  width: 100%;
+  max-width: 300px;
+  border: 8px solid #000;
+  border-radius: 40px;
+  overflow: hidden;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+  background-color: white;
+  padding: 15px;
+}
+
+.logo-container {
+  text-align: center;
+  margin: 20px 0;
+}
+
+.logo {
+  width: 210px;
+  height: auto;
+}
+
+.form-header {
+  text-align: right;
+  color: rgb(110, 110, 110);
+  font-size: 10px;
+  margin-bottom: 10px;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.enquiry-group {
+  display: flex;
+  align-items: center;
+  background-color: rgb(255,229,229);
+  border-radius: 15px;
+  /* padding: 5px 10px; */
+  overflow: hidden;
+}
+
+.enquiry-group :focus {
+  border: 2px solid #161616;
+  border-radius: 15px;
+}
+
+.icon  {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-right: 10px;
+  color: #e91e63;
+  position: relative;
+  padding-right: 10px;
+}
+
+.icon:after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 10px;
+  bottom: 10px;
+  width: 1px;
+  background-color: #ffffff;
+}
+
+input, select {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  padding: 15px 5px;
+  font-size: 14px;
+  color: #666;
+}
+
+select.enquiry-control{
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 15px;
+  background-color: #fde2e2 !important;
+}
+
+
+
+input::placeholder {
+  color: #999;
+}
+
+.submit-btn {
+  background-image: linear-gradient(to top, rgb(204, 204, 204), rgb(255, 255, 255));
+  background-color: #fff;
+  /* background: linear-gradient(to right, #e0e0e0, #ffffff); */
+  border: none;
+  border-radius: 30px;
+  padding: 15px;
+  color: #666;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 10px;
+  font-size: 16px;
+  transition: all 0.3s ease;
+}
+
+.submit-btn:hover {
+  background: linear-gradient(to right, #d5d5d5, #f5f5f5);
+}
+
+.enquiry-footer {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 12px;
+  color: #999;
+}
+
+.enquiry-footer p {
+  margin: 2px 0;
+}
+
+@media (max-width: 400px) {
+  .phone-container {
+      width: 100%;
+      border-width: 8px;
+      border-radius: 30px;
+  }
+  .phone-container {
+    max-width: 0px;
+  }
+}
+
+.form__validation {
+    margin-top: 0.25rem;
+    color: red;
+}
+
+.errormsg {
+    color: red;
+    text-align: left;
+}
+
+.errormsg p {
+    color: red;
+}
+
+p {
+    margin-bottom: 1em;
+    line-height: 1.5;
+}
+
+
+.emigo-modal__heading {
+    margin-bottom: 0;
+    text-transform: capitalize;
+  }
+  
+  .emigo-modal__header {
+    padding: 0.781rem;
+  }
+  
+  .emigo-modal__body {
+    padding: 0.781rem;
+  }
+  
+  .emigo-modal__body form {
+    margin-bottom: 0.625rem;
+  }
+  
+  .emigo-modal__time-container {
+    display: grid;
+    gap: 0.625rem;
+  }
+  
+  .emigo-modal .btn-close:hover {
+    margin: 0;
+  }
+  
+  .emigo-modal__header-button-group {
+    display: flex;
+    gap: 0.625rem;
+  }
+
+
+  .emigo-close-btn {
+    width: 2rem;
+    height: 2rem;
+    position: relative;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    background: #ff6000;
+    border: 0;
+    border-radius: 0.25rem;
+    /* Make the button round */
+    padding: 1rem;
+    /* Add padding inside the button */
+    box-sizing: border-box;
+    /* Ensures padding doesn't affect the outer size */
+    margin-left: auto;
+    opacity: 1 !important;
+  }
+  
+  .emigo-close-btn:after,
+  .emigo-close-btn:before {
+    content: "";
+    position: absolute;
+    width: 1.5rem;
+    /* Cross lines are 1rem wide */
+    height: 0.2rem;
+    /* Make the cross thin */
+    background-color: white;
+    transition: all 0.25s ease 0s;
+    transform-origin: center;
+  }
+  
+  .emigo-close-btn:after {
+    transform: rotate(-45deg);
+  }
+  
+  .emigo-close-btn:before {
+    transform: rotate(45deg);
+  }
+  
+
+  :root {
+    --bs-modal-bg: #fff;
+  }
+
+
+
+
+
+  
