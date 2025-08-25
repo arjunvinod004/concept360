@@ -34,6 +34,7 @@ class Reports extends CI_Controller {
         $data['company_id'] = $company_id;
 		$data['company_code'] = $company_code;
 		$data['unread_count']= $this->Enquirymodel->get_unread_count($company_id);
+		 $data['completed_count']= $this->Enquirymodel->get_completed_count($company_id);
 		$data['Companyusers'] = $Companyusers;
 		$data['get_user_name'] = $get_user_name;
         // $data['reports'] = $reports;
@@ -51,77 +52,25 @@ class Reports extends CI_Controller {
 	}
 
 
-    public function fetchUsersReport(){
-		$user_id = $this->session->userdata('loginid'); // Loged in user id
-		// echo $user_id;
-        $company_id = $this->input->post('company_id');	
-		$from_date = $this->input->post('from_date'); // Match JS
-		$to_date = $this->input->post('to_date');     // Match JS
-		$users_id = $this->input->post('users_id');   // Match JS
-        // echo json_encode([$company_id, $from_date, $to_date, $users_id]);
 
-
-        $reports= $this->Commonmodel->get_user_reports($company_id,$from_date,$to_date,$users_id);
-        $table = '';
-		$table .= '<table class="table table-striped table-bordered table-hover" id="dataTables-example">';
-		$table .= '<thead>';
-		$table .= '<tr>';
-		$table .= '<th> NO.</th>';
-		$table .= '<th>Activity</th>';
-
-		$table .= '</tr>';
-		$table .= '</thead>';	
-		$table .= '<tbody>';
-        $count=1;
-
-		// Assume $deliveryReports is an array containing multiple rows of sales report data
-		if (!empty($reports)) {
-			foreach ($reports as $Report) {
-				// $seen_by_name = $this->db->get_where('users', ['userid' => $Report['seen_by']])->row('UserName');
-				//  print_r($seen_by_name);
-				$table .= '<tr>';
-                $table .= '<td>' .$count++ . '</td>';
-				$table .= '<td>' .$Report['activity'] . '</td>';
-				$table .= '</tr>';
-			}
-		} else {
-			// Handle the case where there's no data
-			$table .= '<tr>';
-			$table .= '<td colspan="4" class="text-center">No  data available.</td>';
-			$table .= '</tr>';
-		}
-
-		// Close the table structure
-		$table .= '</tbody>';
-		$table .= '</table>';
-
-		// Echo the table
-		echo $table;
-
-
-       
-    }
 
 	public function fetchEnquiryReport(){
 		$user_id = $this->session->userdata('loginid'); // Loged in user id
 		// echo $user_id;
         $company_id = $this->input->post('company_id');	
 		$from_date = $this->input->post('from_date'); 
-		$to_date = $this->input->post('to_date');   
+		
         // echo json_encode([$company_id, $from_date, $to_date]);
 
-		$enquiry_report= $this->Commonmodel->get_enquiry_reports($company_id,$from_date,$to_date);
-		// print_r($enquiry_report);
+		$enquiry_report= $this->Commonmodel->get_enquiry_reports($company_id,$from_date);
         $table = '';
 		$table .= '<table class="table table-striped table-bordered table-hover" id="dataTables-example">';
 		$table .= '<thead>';
 		$table .= '<tr>';
 		$table .= '<th> NO.</th>';
 		$table .= '<th>Name</th>';
-		$table .= '<th>Phone Number</th>';
-		$table .= '<th>Email</th>';
 		$table .= '<th>Purpose of visit</th>';
-		$table .= '<th>contact_person</th>';
+		$table .= '<th>date</th>';
 
 		$table .= '</tr>';
 		$table .= '</thead>';	
@@ -135,11 +84,9 @@ class Reports extends CI_Controller {
 				//  print_r($seen_by_name);
 				$table .= '<tr>';
                 $table .= '<td>' .$count++ . '</td>';
-				$table .= '<td>' .$report['visitor_name'] . '</td>';
-				$table .= '<td>' .$report['phone_number'] . '</td>';
-				$table .= '<td>' .$report['email'] . '</td>';
+				$table .= '<td>' .$report['task_name'] . '</td>';
 				$table .= '<td>' .$report['purpose_of_visit'] . '</td>';
-				$table .= '<td>' .$report['contact_person'] . '</td>';
+				$table .= '<td>' .$report['date'] . '</td>';
 				$table .= '</tr>';
 			}
 		} else {

@@ -1383,14 +1383,14 @@ p {
 }
 
 .application-header__provider-description {
-  background: orange;
+  background:#41b0ea;
   display: inline-flex;
   padding: 0.313rem;
   border-radius: 0.219rem;
   padding-left: 0.625rem;
   padding-right: 0.625rem;
   color: white;
-  font-size: 0.563rem;
+  font-size: 1.3rem;
 }
 
 .application-header__provider-img {
@@ -2153,18 +2153,18 @@ p {
 .application-navigation__a {
   display: flex;
   align-items: center;
-  background: #5d7ac9;
+  background: #41b0ea;
   height: 2.188rem;
   padding-left: 0.625rem;
   color: white;
-  border-right: 1px solid #3555ad;
-  border-bottom: 1px solid #3555ad;
+  border-right: 1px solid #41b0ea;
+  border-bottom: 1px solid #41b0ea;
   transition: all 0.45s linear 0s;
   transition: background-color 0.3s ease;
 }
 
 .application-navigation__a:hover {
-  background: #6586db;
+  background:#41b0ea;
   color: white;
 }
 
@@ -2183,11 +2183,11 @@ p {
 }
 
 .application-navigation__a--active {
-  background: #1c3d7e;
+  background: #089ce9;
 }
 
 .application-navigation__a--active:hover {
-  background: #1c3d7e;
+  background: #089ce9;
 }
 
 .application-navigation__li:first-child a {
@@ -2729,7 +2729,7 @@ body {
 
 .search-add-new-dish-list-combo .add-new-dish-btn {
   display: flex;
-  background: #5bcd48;
+  background: #41b0ea;
   white-space: nowrap;
 }
 
@@ -4015,4 +4015,8 @@ body {
     display: none;
 
   }
+}
+
+.due-soon{
+    background-color: #ffcccc !important; /* Light red highlight */
 }

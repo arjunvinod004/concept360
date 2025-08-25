@@ -4,7 +4,7 @@ $hide_nav = (strpos($current_url, 'admin/enquiry/add/'.$company_code) !== false)
 ?>  -->
 
 <!-- <?php if (!$hide_nav) : ?> -->
-<div class="application-navigation container">
+<div class="application-navigation container-fluid">
     <ul class="application-navigation__ul">
         <!-- <li class="application-navigation__li">
             <a href="<?php echo base_url('admin/dashboard'); ?>"
@@ -23,10 +23,20 @@ $hide_nav = (strpos($current_url, 'admin/enquiry/add/'.$company_code) !== false)
                 
         </li>
 
-        <li class="application-navigation__li">
+
+           <li class="application-navigation__li">
+            <a href="<?php echo base_url('admin/approved/index/0'); ?>"
+                class="application-navigation__a <?php echo ($controller == 'approved') ? 'application-navigation__a--active' : ''; ?>">Approved Enquiry <span id="tabs__nav_pending_table_count" class="">
+                <?php if ($completed_count > 0) { ?>
+    <span><?php echo $completed_count; ?></span>
+<?php } ?>
+            </span></a>
+        </li>
+
+        <!-- <li class="application-navigation__li">
             <a href="<?php echo base_url('admin/users/index/0'); ?>"
                 class="application-navigation__a <?php echo ($controller == 'users') ? 'application-navigation__a--active' : ''; ?>">Settings</a>
-        </li>
+        </li> -->
 
         <li class="application-navigation__li">
             <a href="<?php echo base_url('admin/reports/index/0'); ?>"

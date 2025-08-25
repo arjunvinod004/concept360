@@ -1,17 +1,19 @@
 <?php
 class Enquirymodel extends CI_Model {
 	
-	public function getEnquiryCount($company_id) {
+	public function getEnquiryCount() {
         $this->db->select('id'); // Select only the store_product_id
-		$this->db->where('company_id', $company_id);
         $this->db->from('tbl_enquiry'); // Your table name
         return $this->db->count_all_results(); 
     }
+
+
 	public function get_enquiries($company_id){
 		$this->db->select('*');
-		 $this->db->where('company_id', $company_id);
+		$this->db->where('is_approved', 0);
+		$this->db->where('company_id', $company_id);
 		$this->db->from('tbl_enquiry');
-		$this->db->order_by("id", "desc");
+		$this->db->order_by("id", "asc");
 		$query = $this->db->get();
 		// echo $this->db->last_query();  
 		return $query->result_array();
@@ -23,36 +25,34 @@ class Enquirymodel extends CI_Model {
 
 	}
 
-	public function seen_enquiry($id, $company_id, $user_id) {
-		// Update the specific row if not already seen
-		$this->db->select('*');
-		$this->db->from('tbl_enquiry');
-		$this->db->where('id', $id);
-		$this->db->where('company_id', $company_id);
-		$query = $this->db->get();	
-		$row = $query->row_array();// return only one row as array
-		if (!empty($row) && $row['seen_by'] == 0) {
+
+
+	public function approved_enquiry($id, $company_id) {
 			$this->db->where('id', $id);
-			$this->db->where('company_id', $company_id);
-			$this->db->update('tbl_enquiry', ['seen_by' => $user_id]);
-		}
-		return $row;
+		$this->db->where('company_id', $company_id);
+		$this->db->update('tbl_enquiry', array('is_approved' => 1));
 	}
-	
+
+
+	public function approved_enquiry_details($company_id) {
+		// $this->db->where('id', $id);
+		$this->db->where('company_id', $company_id);
+		$this->db->where('is_approved', 1);
+		$this->db->from('tbl_enquiry');
+		$this->db->order_by("id", "asc");
+		$query = $this->db->get();
+		// echo $this->db->last_query();  
+		return $query->result_array();
+	}
 	
 
 	public function getEnquiryDetailsById($id, $company_id) {
-		// Update `is_read` status in `tbl_enquiry`
-		$this->db->where('id', $id);
-		$this->db->where('company_id', $company_id);
-		$this->db->update('tbl_enquiry', array('is_read' => 1));
 	
 		// Fetch updated record from `tbl_enquiry`
 		$this->db->select('*');  // Select all columns
 		$this->db->from('tbl_enquiry');
 		$this->db->where('id', $id);
 		$this->db->where('company_id', $company_id);
-	
 		$query = $this->db->get();
 		return $query->row_array();  // Return a single record as an array
 	}
@@ -93,7 +93,17 @@ class Enquirymodel extends CI_Model {
 
 	public function get_unread_count($company_id) {
 		$this->db->select('*');
-		$this->db->where('is_read', 0);
+		$this->db->where('is_approved', 0);
+		$this->db->where('company_id', $company_id);
+		$this->db->from('tbl_enquiry');
+		$query = $this->db->get();
+		return $query->num_rows();
+	}
+
+
+		public function get_completed_count($company_id) {
+		$this->db->select('*');
+		$this->db->where('is_approved', 1);
 		$this->db->where('company_id', $company_id);
 		$this->db->from('tbl_enquiry');
 		$query = $this->db->get();
@@ -104,129 +114,26 @@ class Enquirymodel extends CI_Model {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	
-
-
-
-
-
-
-
-    // Insert into products table
-    public function insert_product_translation($data) {
-        $this->db->insert('product', $data);
-        return $this->db->insert_id(); // Return inserted product ID
+public function search_enquiry($search, $company_id) {
+    $this->db->select('*');
+    $this->db->from('tbl_enquiry');
+    
+    if (!empty($search)) {
+        $this->db->group_start();
+            $this->db->like('task_name', $search);
+            $this->db->or_like('purpose_of_visit', $search);
+            $this->db->or_like('date', $search);
+        $this->db->group_end();
     }
 
-    // Insert into product_translations table
-    public function insert_translation($data) {
-        $this->db->insert('product_translations', $data);
-    }
+    $this->db->where('company_id', $company_id);
+    
+    $query = $this->db->get();
+    return $query->result_array(); // ✅ make sure you return the results
+}
 
-    public function listcategories() {
-        $this->db->select('*');
-		$this->db->from('categories');
-		//$this->db->where('is_active', 1);
-        //$this->db->where('language', 'en');
-		$this->db->order_by("category_id", "desc");
-		$query = $this->db->get();
-		return $query->result_array();
-    }
 
-	// public function listproducts() {
-    //     $this->db->select('*');
-	// 	$this->db->from('product');
-	// 	//$this->db->where('is_active', 1);
-    //     //$this->db->where('language', 'en');
-	// 	$this->db->order_by("product_id", "desc");
-	// 	$query = $this->db->get();
-	// 	return $query->result_array();
-    // }
-
-	public function listproducts() {
-		$this->db->select('product.*, categories.category_name_en'); // Select all product fields and category name
-		$this->db->from('product');
-		$this->db->join('categories', 'product.category_id = categories.category_id', 'left'); // Left join with category
-		$this->db->order_by("product.product_id", "desc");
-		$query = $this->db->get();
-		return $query->result_array();
-	}
 	
-	public function getOrderNo() {
-        $this->db->select('token_id');
-	    $this->db->from('token_generation');
-		$this->db->where('id ', 1);
-		$query = $this->db->get();
-        $result = $query->result_array();
-        return $token_id = $result[0]['token_id'];
-    }
-	
-	public function sublistcategories(){
-		$this->db->select('*');
-		$this->db->from('subcategories');
-		//$this->db->where('is_active', 1);
-        //$this->db->where('language', 'en');
-		$this->db->order_by("subcategory_id", "desc");
-		$query = $this->db->get();
-		return $query->result_array();
-	}
-	
-	public function insert_subcategories_translation($data) {
-        $this->db->insert('subcategories', $data);
-        return $this->db->insert_id();
-    }
-	
-	
-	public function get_sub_categories_by_id($id){
-	    $this->db->select('*');
-		$this->db->from('subcategories');
-		$this->db->where('subcategory_id',$id );
-		$query = $this->db->get();
-		return $query->result_array();
-	}
-	
-
-	public function listproducts_category_wise($category_id) {
-		$this->db->select('product.*, categories.category_name_en'); // Select all product fields and category name
-		$this->db->from('product');
-		$this->db->join('categories', 'product.category_id = categories.category_id', 'left');
-		$this->db->where('product.category_id', $category_id); // Left join with category
-		$this->db->order_by("product.product_id", "desc");
-		$query = $this->db->get();
-		return $query->result_array();
-	}
-
-	public function get_store_vat_id($store_id) {
-		$this->db->select('gst_or_tax');
-		$this->db->from('store');
-		$this->db->where('store_id', $store_id);
-		$query = $this->db->get();
-		return $query->result_array();
-	}
-	public function get_store_tax_rate($vat_id) {
-		$this->db->select('tax_rate');
-		$this->db->from('tax');
-		$this->db->where('tax_id', $vat_id);
-		$query = $this->db->get();
-		$result = $query->row();
-		return $result ? $result->tax_rate : 0; // Return 0 if no result found
-	}
 
 
 
@@ -627,479 +534,7 @@ return $query->result_array();
     //     return $result;
     // }
 
-	public function shopAssignedActiveProducts() {
-		$store_id = $this->session->userdata('logged_in_store_id');
-$this->db->select('
-    swpa.*,
-    p.product_id,
-    p.product_name_en,
-    p.is_addon AS product_is_addon,
-    p.is_customizable AS product_is_customizable,
-    p.product_veg_nonveg,
-    p.image,
-    c.category_name_en,
-    c.category_id,
-    ss.pu_qty,
-    ss.minqty,
-    (ss.pu_qty - ss.sl_qty) AS balance_stock
-');
-$this->db->from('store_wise_product_assign AS swpa');
-$this->db->join('product AS p', 'p.product_id = swpa.product_id', 'left');
-$this->db->join('categories AS c', 'c.category_id = swpa.category_id', 'left');
-$this->db->join('store_stock AS ss', 'ss.product_id = p.product_id', 'left');
-$this->db->where('swpa.store_id', $store_id);
-//$this->db->where('swpa.is_active', 0);
-$this->db->group_by('swpa.store_product_id');
-$query = $this->db->get();
-//echo $this->db->last_query();exit;
-$products = $query->result_array();
-$available_products = [];
-		foreach ($products as $product) 
-		{
-			if ($product['category_id'] == 23) 
-			{
-				$combo_items = $this->getComboItems($store_id,$product['store_product_id']);
-				$combo_available = true;
-				
-				if (empty($combo_items)) {
-                    $combo_available = false;
-                }
-                else
-                {
-                    foreach ($combo_items as $item) 
-                    {
-                        $stock = $this->getCurrentStock($item['item_id'], date('Y-m-d'), $store_id);
-                        $availability = $this->getCurrentProductAvailability($item['item_id'],$store_id);
-                        if ($stock < $item['quantity'] || $availability == 1)
-                        {
-                            $combo_available = false;
-                            break;
-                        }
-                    }
-                }
-				
-				if ($combo_available) {
-					$available_products[] = $product;
-				}
-			}
-			else 
-			{
-				$stock = $this->getCurrentStock($product['store_product_id'], date('Y-m-d'), $store_id);
-				if ($stock > 0 && $product['availability'] == 0) 
-				{
-					$available_products[] = $product;
-				}
-		}
-	}
-	return $available_products;
-}
-public function getCurrentStock($product_id,$date,$store_id) {
-	$this->db->select('(SUM(pu_qty) - SUM(sl_qty)) as bal_qty');
-	$this->db->from('store_stock');
-	$this->db->where('product_id', $product_id);
-	//$this->db->where('tr_date', $date);
-	$this->db->where('store_id', $store_id);
-	$query = $this->db->get();
-	$result = $query->result_array(); 
-	return $result[0]['bal_qty'];
-}
-public function getCurrentProductAvailability($store_product_id,$store_id){
-	$this->db->select('availability');
-	$this->db->from('store_wise_product_assign');
-	$this->db->where('store_product_id', $store_product_id);
-	$this->db->where('store_id', $store_id);
-	$query = $this->db->get();
-	return $query->row()->availability;
-}
-public function getComboItems($store_id,$productId) {      
-	$this->db->select('*'); // Fetch all columns
-	$this->db->from('combo_items'); // Specify the table
-	$this->db->where('product_id', $productId); // Filter by product_id
-	$this->db->where('store_id', $store_id); // Filter by store_id
-	$query = $this->db->get(); // Execute the query
-   // echo $this->db->last_query();exit;
-	return $query->result_array(); // Return the result as an array
-	
-}
-	public function shopAssignedComboProducts() {
-		$store_id = $this->session->userdata('logged_in_store_id');
-		$this->db->select('
-			swpa.*,
-			p.product_id,
-			p.product_name_en,
-			p.is_addon AS product_is_addon,
-			p.is_customizable AS product_is_customizable,
-			p.product_veg_nonveg,
-			p.image as product_image,
-			c.category_name_en,
-			c.category_id,
-			ss.pu_qty,
-			ss.minqty,
-			(ss.pu_qty - ss.sl_qty) AS balance_stock
-		');
-		$this->db->from('store_wise_product_assign AS swpa');
-		$this->db->join('product AS p', 'p.product_id = swpa.product_id', 'left');
-		$this->db->join('categories AS c', 'c.category_id = swpa.category_id', 'left');
-		$this->db->join('store_stock AS ss', 'ss.product_id = p.product_id', 'left');
-		$this->db->where('swpa.store_id', $store_id);
-		$this->db->where('swpa.category_id', 23 );
-		$this->db->group_by('swpa.store_product_id');
-		$query = $this->db->get();
-		//echo $this->db->last_query();exit;
-		return $query->result_array(); // Return results as an array of objects
-	}
-	
-// search products
-	public function shopAssignedProductsbysearch($search = null) {
-		$store_id = $this->session->userdata('logged_in_store_id');
-		$this->db->select('
-    store_wise_product_assign.*,
-    product.product_id,
-    product.product_name_en,
-    product.is_addon as product_is_addon,
-    product.is_customizable as product_is_customizable,
-    product.product_veg_nonveg,
-    product.image,
-    categories.category_name_en,
-    categories.category_id,
-    store_stock.pu_qty,
-    store_stock.minqty,
-    (store_stock.pu_qty - store_stock.sl_qty) as balance_stock
-');
-		$this->db->from('store_wise_product_assign');
-		$this->db->join('product', 'product.product_id = store_wise_product_assign.product_id', 'left'); // Left join with product.id');
-		$this->db->join('categories', 'categories.category_id = store_wise_product_assign.category_id', 'left'); // Left join with product.id');
-		$this->db->join('store_stock', 'store_stock.product_id = store_wise_product_assign.store_product_id', 'left');
-		$this->db->where('store_wise_product_assign.store_id', $store_id);
-		$this->db->group_by('store_wise_product_assign.store_product_id');
-		if (!empty($search)) {
-			$this->db->like('product_name_en', $search); // Filter by product name
-		}
-		$query = $this->db->get();
-		//echo $this->db->last_query();exit;
-		return $query->result();
-	}
 
-	public function store_taxes($store_id){
-		$this->db->select('store_country');
-		$this->db->from('store');
-		$this->db->where('store_id', $store_id);
-		$query = $this->db->get();
-		$row = $query->result_array();
-		$country_id = $row[0]['store_country']; //Get current login store country id
-		$this->db->select('tax_rate');  //Find gst and taxes values based on country id
-		$this->db->from('tax');
-		$this->db->where('country_id', $country_id);
-		$query = $this->db->get();
-		return $query->result_array();
-	}
-	public function default_tax($store_id){
-		$this->db->select('gst_or_tax');
-		$this->db->from('store');
-		$this->db->where('store_id', $store_id);
-		$query = $this->db->get();
-		$row = $query->result_array();
-		$selected_gst_vat_id = $row[0]['gst_or_tax']; //Selected gst or tax value
-		$this->db->select('tax_rate');  //Find gst and taxes values based on country id
-		$this->db->from('tax');
-		$this->db->where('tax_id', $selected_gst_vat_id);
-		$query = $this->db->get();
-		$row1 = $query->result_array();
-		return $row1[0]['tax_rate'];
-	}
-
-
-	public function shopAssignedProductsByKeyUpSearch($search = null) {
-        $store_id = $this->session->userdata('logged_in_store_id');
-        $this->db->select('
-    store_wise_product_assign.*,
-    product.product_id,
-    product.product_name_en,
-    product.is_addon as product_is_addon,
-    product.is_customizable as product_is_customizable,
-    product.product_veg_nonveg,
-    product.image as store_image,
-    categories.category_name_en,
-    categories.category_id,
-    store_stock.pu_qty,
-    store_stock.minqty,
-    (store_stock.pu_qty - store_stock.sl_qty) as balance_stock
-');
-        $this->db->from('store_wise_product_assign');
-        $this->db->join('product', 'product.product_id = store_wise_product_assign.product_id', 'left'); // Left join with product.id');
-        $this->db->join('categories', 'categories.category_id = store_wise_product_assign.category_id', 'left'); // Left join with product.id');
-        $this->db->join('store_stock', 'store_stock.product_id = store_wise_product_assign.store_product_id', 'left');
-        $this->db->where('store_wise_product_assign.store_id', $store_id);
-
-        if (!empty($search)) {
-            $this->db->like('product_name_en', $search); // Filter by product name
-			$this->db->or_like('store_product_name_en', $search);
-        }
-		$this->db->group_by('store_wise_product_assign.store_product_id');
-        $query = $this->db->get();
-        return $query->result();
-    }
-
-	public function ChangeProductStatus($store_product_id,$store_id,$is_active){ 
-        $this->db->set('is_active', $is_active);
-        $this->db->where('store_product_id', $store_product_id);
-        $this->db->where('store_id', $store_id);
-        return $this->db->update('store_wise_product_assign');
-    }
-	public function ChangeProductAvailability($store_product_id,$store_id,$is_active){ 
-        $this->db->set('availability', $is_active);
-        $this->db->where('store_product_id', $store_product_id);
-        $this->db->where('store_id', $store_id);
-        return $this->db->update('store_wise_product_assign');
-    }
-
-	public function get_variant_by_product_id($varient_id,$store_id,$store_product_id) {
-		$this->db->where('variant_id', $varient_id);
-		$this->db->where('store_id', $store_id);
-		$this->db->where('store_product_id', $store_product_id);
-		$query = $this->db->get('store_variants');
-		return $query->num_rows();
-	}
-	
-/*************  ✨ Codeium Command ⭐  *************/
-/**
- * Retrieves the number of addon records for a specific product in a store.
- *
- * @param int $addon_id The ID of the addon item.
- * @param int $store_id The ID of the store.
- * @param int $store_product_id The ID of the store product.
- * @return int The number of addon records found for the specified criteria.
- */
-
-/******  8de712ca-80df-4ed6-b42f-7f8462ade35a  *******/
-	public function get_addon_by_product_id($addon_id,$store_id,$store_product_id) {
-		$this->db->where('addon_item_id', $addon_id);
-		$this->db->where('store_id', $store_id);
-		$this->db->where('store_product_id', $store_product_id);
-		$query = $this->db->get('products_addons');
-		return $query->num_rows();
-	}
-
-	public function get_recipe_by_product_id($recipe_id,$store_id,$store_product_id) {
-		$this->db->where('recipe_id', $recipe_id);
-		$this->db->where('store_id', $store_id);
-		$this->db->where('store_product_id', $store_product_id);
-		$query = $this->db->get('store_recipe');
-		return $query->num_rows();
-	}
-
-	public function list_all_addons() {
-		$store_id = $this->session->userdata('logged_in_store_id');
-		$this->db->select('swpa.*,p.*'); // Select all swpa fields and product name
-		$this->db->from('store_wise_product_assign swpa');
-		$this->db->join('product p', 'swpa.product_id = p.product_id'); // Correct join with product table
-		$this->db->where('swpa.store_id', $store_id);
-		$this->db->where('swpa.is_addon', 1);
-		$query = $this->db->get();
-		//echo $this->db->last_query();exit;
-		return $query->result_array();
-	}
-	public function already_assigned_addons($store_id , $store_product_id) {
-		$this->db->select('products_addons.*, product.product_name_en'); // Select all product fields and category name
-		$this->db->from('products_addons');
-		$this->db->join('product', 'products_addons.addon_item_id = product.product_id', 'left'); // Left join with category
-		$this->db->where('products_addons.store_id', $store_id);
-		$this->db->where('products_addons.store_product_id', $store_product_id);
-		$query = $this->db->get();
-		//echo $this->db->last_query();exit;
-		return $query->result_array();
-	}
-	
-	public function update_product_description($data , $store_id , $product_id){
-		$this->db->where('store_id', $store_id);
-		$this->db->where('store_product_id', $product_id);
-		$this->db->update('store_wise_product_assign', $data);
-	}
-
-	// adds stocks 
-	public function addStock($quantity, $store_id, $product_id, $date) 
-	{
-		$minqty = 0;
-		$this->db->select('*');
-		$this->db->from('store_stock');
-		$this->db->where('store_id', $store_id);
-		$this->db->where('product_id', $product_id);
-		$this->db->where('tr_date', $date);
-		$this->db->where('ttype', 'SK');
-		$this->db->where('order_id', 0);
-		$query = $this->db->get();
-		$result = $query->row();
-
-		if(empty($result))
-		{
-		$this->db->set('store_id', $store_id);
-			$this->db->set('product_id', $product_id);
-			$this->db->set('ttype', 'SK');
-			$this->db->set('order_id', 0);
-			$this->db->set('pu_qty', $quantity);
-			$this->db->set('minqty', $minqty);
-			$this->db->set('tr_date', $date);
-			$this->db->set('created_by', $this->session->userdata('loginid'));
-			$this->db->set('created_date', date('Y-m-d H:i:s'));
-			$this->db->set('modified_by', $this->session->userdata('loginid'));
-			$this->db->set('modified_date', date('Y-m-d H:i:s'));
-			$this->db->insert('store_stock');
-		}
-		else
-		{
-			$current_quantity = (int)$result->pu_qty;
-			$quantity = $current_quantity + (int)$quantity;
-		$this->db->set('pu_qty', $quantity);
-		$this->db->set('minqty', '2');
-		$this->db->set('created_by', $this->session->userdata('loginid'));
-		$this->db->set('created_date', date('Y-m-d H:i:s'));
-		$this->db->set('modified_by', $this->session->userdata('loginid'));
-		$this->db->set('modified_date', date('Y-m-d H:i:s'));
-		$this->db->where('store_id', $store_id);
-		$this->db->where('product_id', $product_id);
-		$this->db->where('tr_date', $date);
-		$this->db->where('ttype', 'SK');
-		$this->db->where('order_id', 0);
-		$this->db->where('id', $result->id);
-		// $this->db->update('store_stock');    
-		if (!$this->db->update('store_stock')) {
-			log_message('error', 'Update failed: ' . $this->db->last_query());
-		}
-	} 
-	$this->db->set('is_active', 0);
-	$this->db->where('store_id', $store_id);
-	$this->db->where('store_product_id', $product_id);
-	$this->db->update('store_wise_product_assign');
-    }
-
-  // remove stocks
-
-public function removeStock($quantity, $store_id, $product_id, $date){
-
-	$minqty = 0;
-	$this->db->select('*');
-	$this->db->from('store_stock');
-	$this->db->where('store_id', $store_id);
-	$this->db->where('product_id', $product_id);
-	$this->db->where('tr_date', $date);
-	$this->db->where('ttype', 'SK');
-	$this->db->where('order_id', 0);
-	$query = $this->db->get();
-	$result = $query->row();
-
-	if(empty($result))
-	{
-		// echo "h";echo $quantity; exit;
-		$this->db->set('store_id', $store_id);
-		$this->db->set('product_id', $product_id);
-		$this->db->set('ttype', 'SL');
-		$this->db->set('order_id', 0);
-		$this->db->set('sl_qty', $quantity);
-		$this->db->set('minqty', $minqty);
-		$this->db->set('tr_date', $date);
-		$this->db->set('created_by', $this->session->userdata('loginid'));
-		$this->db->set('created_date', date('Y-m-d H:i:s'));
-		$this->db->set('modified_by', $this->session->userdata('loginid'));
-		$this->db->set('modified_date', date('Y-m-d H:i:s'));
-		$this->db->insert('store_stock');
-	}
-	else
-	{
-		$current_quantity = (int)$result->sl_qty;
-		log_message('debug', "Current Quantity: $current_quantity, Input Quantity: $quantity");
-		
-		$quantity = $current_quantity + (int)$quantity;
-		
-		log_message('debug', "New Quantity: $quantity");
-		// echo "e";echo $quantity;exit;
-	$this->db->set('sl_qty', $quantity);
-	$this->db->set('minqty', '2');
-	$this->db->set('created_by', $this->session->userdata('loginid'));
-	$this->db->set('created_date', date('Y-m-d H:i:s'));
-	$this->db->set('modified_by', $this->session->userdata('loginid'));
-	$this->db->set('modified_date', date('Y-m-d H:i:s'));
-	$this->db->where('store_id', $store_id);
-	$this->db->where('product_id', $product_id);
-	$this->db->where('tr_date', $date);
-	$this->db->where('ttype', 'SK');
-	$this->db->where('order_id', 0);
-	$this->db->where('id', $result->id);
-
-	// $this->db->update('store_stock');    
-
-	if (!$this->db->update('store_stock')) {
-		log_message('error', 'Update failed: ' . $this->db->last_query());
-	}
-
-	$this->load->model('Ordermodel');
-
-
-	// Call getCurrentStock to fetch the current stock
-	$currentStock = $this->Ordermodel->getCurrentStock($product_id, $date, $store_id);
-	// print_r($currentStock); exit;
-
-	if($currentStock == 0){
-		$this->db->set('is_active', 1);
-		$this->db->where('store_id', $store_id);
-	$this->db->where('store_product_id', $product_id);
-	$this->db->update('store_wise_product_assign');	
-	} 
-
-} 
-
-
-}
-	  
-	public function get_product_name($addon_item_id){
-		$this->db->select('product_id');
-	    $this->db->from('store_wise_product_assign');
-		$this->db->where('store_product_id ', $addon_item_id);
-		$query = $this->db->get();
-        $result = $query->result_array();
-        $product_id1 = $result[0]['product_id'];
-        $this->db->select('*');
-        $this->db->from('product');
-        $this->db->where('product_id', $product_id1);
-        $product_query = $this->db->get();
-        $row =  $product_query->result_array();
-        return $row[0]['product_name_en'];
-	}
-	public function getProductImages($product_id) {
-		$this->db->select('product_id,image');
-		$this->db->from('store_wise_product_assign');
-		$this->db->where('store_product_id', $product_id);
-		$query = $this->db->get();
-		$row = $query->result_array();
-		$product_id1 = $row[0]['product_id'];
-		$product_image = $row[0]['image'];
-
-		$this->db->select('image,image1,image2,image3,image4');
-		$this->db->from('product');
-		$this->db->where('product_id', $product_id1);
-		$query = $this->db->get();
-		$row = $query->row_array();
-
-		$productImages[] = [
-			'default_image' => $product_image ? $product_image : $row['image'],
-			'image1' => $row['image1'],
-			'image2' => $row['image2'],
-			'image3' => $row['image3'],
-			'image4' => $row['image4']
-		]; 
-
-		return $productImages;
-
-		
-	}
-
-	public function set_default_image($store_product_id , $image) {
-		$this->db->where('store_product_id', $store_product_id);
-		$this->db->update('store_wise_product_assign', array('image' => $image));
-	}
-	public function update_order_index($category_id , $order_index) {
-		$this->db->where('category_id', $category_id);
-		$this->db->update('categories', array('order_index' => $order_index));
-	}
 	
 }
 ?>

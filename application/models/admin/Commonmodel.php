@@ -252,27 +252,14 @@ public function get_user_reports($company_id, $from_date, $to_date, $users_id) {
     return $query->result_array();
 }
 
-public function get_enquiry_reports($company_id, $from_date, $to_date) {
+public function get_enquiry_reports($company_id, $from_date) {
    
-    $this->db->select('*');
+ $this->db->select('*');
     $this->db->from('tbl_enquiry');
     $this->db->where('company_id', $company_id);
 
-    $today = date('Y-m-d');
-    $one_month_ago = date('Y-m-d', strtotime('-1 month'));
-
-    // Date filter logic
-    if (!empty($from_date) && !empty($to_date)) {
-        // echo "from date and to date not empty";
-        $this->db->where('date >=', $from_date);
-        $this->db->where('date <=', $to_date);
-    } elseif (!empty($from_date) && empty($to_date)) {
-        // echo "from date";
-        $this->db->where('date', $from_date); 
-    } elseif (empty($from_date) && empty($to_date)) {
-        // echo "both empty";
-        $this->db->where('date >=', $one_month_ago);
-        $this->db->where('date <=', $one_month_ago);
+    if (!empty($from_date)) {
+        $this->db->where('date', $from_date);
     }
 
     $query = $this->db->get();

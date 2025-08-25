@@ -65,7 +65,7 @@ class Enquiry extends CI_Controller {
         $page = ($this->uri->segment(4)) ? $this->uri->segment(4) : 0; // Get the current page number
         //$data['products'] = $this->Enquirymodel->shopAssignedProductsbyPagination($config['per_page'], $page);
         $company_id = $this->session->userdata('logged_in_company_id');
-        print_r($company_id);
+        // print_r($company_id);
          $company_code = 1;
 		$role_id = $this->session->userdata('roleid'); // Role id of logged in user
 		$user_id = $this->session->userdata('loginid'); // Loged in user id
@@ -95,6 +95,8 @@ class Enquiry extends CI_Controller {
 		$data['store_logo'] =$store_logo;
         $data['role_id'] = $role_id;
         $data['unread_count']= $this->Enquirymodel->get_unread_count($company_id);
+        $data['completed_count']= $this->Enquirymodel->get_completed_count($company_id);
+        
         $data['company_code']=$company_code;      
         $data['get_user_name'] = $get_user_name;
         //  print_r($data['unread_count']);
@@ -123,10 +125,7 @@ class Enquiry extends CI_Controller {
 
    
 
-    public function delete(){
-	    $this->Enquirymodel->delete_category($this->input->post('id'));
-		$this->session->set_flashdata('error','Category deleted successfully');
-	}
+
 
 
 
@@ -134,39 +133,6 @@ class Enquiry extends CI_Controller {
 
    
 
-    public function add($token = null) {
-        $expire_time = $this->session->userdata('data_expire');
-
-        if ($expire_time && time() < $expire_time) {
-          redirect('admin/Enquiry/success'); 
-
-        }
-            $data['token'] = $token;
-            $id = $this->Commonmodel->get_company_id_by_token($token);
-            $user_id = $this->session->userdata('loginid'); // Loged in user id
-            // echo $user_id; exit;
-            $company_id = $this->session->userdata('logged_in_company_id');
-            $store_disp_name = $this->Commonmodel->get_company_name($company_id);
-            $store_address = $this->Commonmodel->get_company_address($user_id);
-            $store_logo = $this->Commonmodel->get_company_logo($user_id);
-            $data['selected_company'] = $id;
-            // print_r($data['selected_company']);
-            $controller = $this->router->fetch_class(); // Gets the current controller name
-            $method = $this->router->fetch_method();   // Gets the current method name
-            $data['controller'] = $controller;
-            $data['companies']=$this->Commonmodel->list_companies();
-              if ($user_id) {
-                $data['store_disp_name'] =$store_disp_name;
-                $data['store_address'] = $store_address;
-            }
-            $data['support_no'] = "9841234567";
-            $data['support_email'] ="test@.com";
-            $data['store_logo'] = "logo image path";
-            // $this->load->view('admin/includes/header',$data);
-            $this->load->view('admin/includes/owner-dashboard',$data);
-            $this->load->view('admin/enquiry/add-enquiry');
-            // $this->load->view('admin/includes/footer');
-    }
 
 
     public function save() {
@@ -174,40 +140,21 @@ class Enquiry extends CI_Controller {
         
         $this->form_validation->set_rules('purpose_of_visit', 'purpose of visit', 'required');
         // $this->form_validation->set_rules('contact_person', 'contact person', 'required');
-        $this->form_validation->set_rules('visitor_name', 'name', 'required');
-        $this->form_validation->set_rules(
-        'phone_number',
-        'Phone Number',
-        'required|regex_match[/^\+?[0-9]{10,}$/]',
-        ['regex_match' => 'The Phone Number must be at least 10 digits ']
-    );
-
-         $this->form_validation->set_rules(
-            'email',
-            'Email',
-            'valid_email',
-            ['valid_email' => 'Please enter a valid email address.']
-        );
-
-        $requires_company = in_array($this->input->post('purpose_of_visit'), ['vendor supplier', 'business meeting', 'others','delivery pickup']);
+        $this->form_validation->set_rules('task_name', 'name', 'required');
+         $this->form_validation->set_rules('due_date', 'Date', 'required');
+    
         
-        if ($requires_company) {
-            $this->form_validation->set_rules('company_name', 'company Name', 'required');
-        }
+        // if ($requires_company) {
+        //     $this->form_validation->set_rules('company_name', 'company Name', 'required');
+        // }
         
         if ($this->form_validation->run() == FALSE) {
             $errors = [
-                'visitor_name' => form_error('visitor_name'),
-                'phone_number' => form_error('phone_number'),
-                'email' => form_error('email'),
+                'task_name' => form_error('task_name'),
+                'due_date' => form_error('due_date'),
                 'purpose_of_visit' => form_error('purpose_of_visit'),
-                // 'contact_person' => form_error('contact_person')
             ];
             
-            // Only add company_name error if it's required
-            if ($requires_company) {
-                $errors['company_name'] = form_error('company_name');
-            }
             
             echo json_encode([
                 'success' => false,
@@ -216,45 +163,48 @@ class Enquiry extends CI_Controller {
             
         } else {
             $data = [
-                'visitor_name' => $this->input->post('visitor_name'),
-                'phone_number' => $this->input->post('phone_number') ?? null,
-                'email' => $this->input->post('email'),
-                'company_id' => $this->input->post('company_id'),
+                'task_name' => $this->input->post('task_name'),
+                'company_id' => 1,
                 'purpose_of_visit' => $this->input->post('purpose_of_visit'),
-                'contact_person' => $this->input->post('contact_person') ?? null,
-                'is_read' => 0,
-                'created_date' => date('Y-m-d H:i:s'),
-                'date' => date('Y-m-d')
+                'is_approved' => 0,
+                'date' => $this->input->post('due_date'),
             ];
             
-            if ($requires_company) {
-                $data['company_name'] = $this->input->post('company_name');
+
+            $this->db->where('date', $data['date']);
+            // $this->db->or_where('email', $data['email']);
+            $query = $this->db->get('tbl_enquiry');
+            
+            if ($query->num_rows() > 0) {
+                echo json_encode([
+                    'success' => 'false', 
+                    'errors' => [
+                        'duplicate' => 'date already exists'
+                    ]
+                ]);
+            } else {
+                $this->Enquirymodel->insert_enquiry($data);
+                echo json_encode(['success' => 'success']);
             }
 
-            $this->Enquirymodel->insert_enquiry($data);
-            $this->session->set_userdata('enquiry_id', $this->db->insert_id());
-            $this->session->set_userdata('data_expire', time() + 60); // 120 seconds = 2 minutes
-            echo json_encode(['success' => 'success']);
+            // $this->Enquirymodel->insert_enquiry($data);
+            // $this->session->set_userdata('enquiry_id', $this->db->insert_id());
+            // $this->session->set_userdata('data_expire', time() + 60); // 120 seconds = 2 minutes
+            // echo json_encode(['success' => 'success']);
 
         
             
             // Check if visitor_name or email already exists
-            // $this->db->where('visitor_name', $data['visitor_name']);
-            // $this->db->or_where('email', $data['email']);
-            // $query = $this->db->get('tbl_enquiry');
             
-            // if ($query->num_rows() > 0) {
-            //     echo json_encode([
-            //         'success' => 'false', 
-            //         'errors' => [
-            //             'duplicate' => 'Name or Email already exists'
-            //         ]
-            //     ]);
-            // } else {
-            //     $this->Enquirymodel->insert_enquiry($data);
-            //     echo json_encode(['success' => 'success']);
-            // }
         }
+    }
+
+
+    public function approved(){
+        $id = $this->input->post('id');
+        $company_id = $this->session->userdata('logged_in_company_id');
+        // $user_id = $this->session->userdata('loginid');
+        $this->Enquirymodel->approved_enquiry($id,$company_id);
     }
 
     
@@ -266,7 +216,7 @@ class Enquiry extends CI_Controller {
             // print_r($id);
             $user_id = $this->session->userdata('loginid');
             $company_id = $this->session->userdata('logged_in_company_id');
-            $get_user_name = $this->Commonmodel-> get_user_name($company_id,$user_id);
+          
 
             // echo "$id"; exit;
            
@@ -274,8 +224,7 @@ class Enquiry extends CI_Controller {
           
 
             // print_r($enquiry_details);
-            $seen_by= $this->Enquirymodel->seen_enquiry($id,$company_id,$user_id);
-
+        
 
            
             // print_r($seen_by);
@@ -288,41 +237,17 @@ class Enquiry extends CI_Controller {
                 return;
             }
 
-            $seen_by_db = trim($this->db->get_where('users', ['userid' => $enquiry_details['seen_by']])->row('UserName') ?? '');
-            // Decide final display name
-            if (!empty($enquiry_details['seen_by']) && $user_id == $enquiry_details['seen_by'] && !empty($get_user_name)) {
-                $seen_by_name = $seen_by_db;
-            } elseif (!empty($seen_by_db)) {
-                $seen_by_name = $seen_by_db;
-            } else {
-                $seen_by_name = $get_user_name;
-            }
-
+         
             $result = [
                 //$seen_by_name = $this->db->get_where('users', ['userid' => $enquiry_details['seen_by']])->row('UserName'),
-                'created_date' => $enquiry_details['created_date'] ?? null,
-                'visitor_name' => $enquiry_details['visitor_name'] ?? null,
-                'phone_number' => $enquiry_details['phone_number'] ?? null,
-                'email' => $enquiry_details['email'] ?? null,
+               
+                'task_name' => $enquiry_details['task_name'] ?? null,
                 'company_id' => $enquiry_details['company_id'] ?? null,
                 'purpose_of_visit' => $enquiry_details['purpose_of_visit'] ?? null,
-                'contact_person' => $enquiry_details['contact_person'] ?? null,
+                'date' => $enquiry_details['date'] ?? null,
                 // 'remarks' => $enquiry_details['remarks'] ?? null,
                 // 'visitor_message' => $enquiry_details['visitor_message'] ?? null,
-                'company_name' => $enquiry_details['company_name'] ?? null,
-                'seen_by' =>$seen_by_name
             ];
-
-            if ($enquiry_details) {
-                $currentDateTime = date('Y-m-d h:i:s A');
-                $this->db->insert('user_activity', [
-                    'user_id'     => $user_id,
-                    'company_id'  => $company_id,
-                    'date'        => $currentDateTime,
-                    'activity'    => $get_user_name . ' viewed enquiry of ' . $enquiry_details['visitor_name'] . ' on ' . $currentDateTime,
-                    'created_at'  => $currentDateTime,
-                ]);
-            }
             // Respond with success and data
             echo json_encode([
                 'success' => true,
@@ -331,18 +256,13 @@ class Enquiry extends CI_Controller {
     }
     public function updateEnquirydetails()
     {
-            $productId = $this->input->post('enquiry_id_new');
+            $productId = $this->input->post('edit_id');
 
                      $data = array(
-                'visitor_name' => $this->input->post('visitor_name'),
-                'phone_number' => $this->input->post('phone_number'),
-                'email' => $this->input->post('email'),
-                'company_id' => $this->input->post('company_id'),
-                'purpose_of_visit' => $this->input->post('purpose_of_visit'),
-                'contact_person' => $this->input->post('contact_person'),
-                'remarks' => $this->input->post('remarks'),
-                'visitor_message' => $this->input->post('visitor_message'),
-                'is_read' => 0
+                'task_name' => $this->input->post('task_name_edit'),
+                'purpose_of_visit' => $this->input->post('purpose_of_visit_edit'),
+                'date' => $this->input->post('due_date_edit'),
+                'is_approved' => 0
 
             );
 
@@ -356,181 +276,52 @@ class Enquiry extends CI_Controller {
 		$this->session->set_flashdata('error','Category deleted successfully');
 	}
 
-// Function to add a product with translations
-public function categoryname_exists($country)
-	{
-		if ($this->Enquirymodel->check_categoryname_exists($country)) {
-			$this->form_validation->set_message('categoryname_exists', 'The {field} is already taken.');
-			return FALSE;
-		} else {
-			return TRUE;
-		}
-	}
+// search product
 
     public function searchproduct() {
         $company_id = $this->session->userdata('logged_in_company_id');
         $search = $this->input->post('value');
         $role_id = $this->session->userdata('roleid');
+$results= $this->Enquirymodel->search_enquiry($search,$company_id);
+
+
+        //  echo $results;
     
-        $this->db->select('*');
-        $this->db->from('tbl_enquiry');
-    
-        // Only apply search filters if search is not empty
-        if (!empty($search)) {
-            $this->db->group_start();
-                $this->db->like('visitor_name', $search);
-                $this->db->or_like('purpose_of_visit', $search);
-                $this->db->or_like('contact_person', $search);
-            $this->db->group_end();
-        }
-        $this->db->where('company_id', $company_id);
-    
-        $query = $this->db->get();
-        $results = $query->result_array();
+      
         $table = '';
-        $table .= '<table class="table table-bordered mt-3" id="dataTables-example">';
-        $table .= '<thead class="table-light">';
+        $table .= '<table class="table table-striped table-bordered">';
+        $table .= '<thead>';
         $table .= '<tr>';
-        $table .= '<th>Sl</th>';
-        $table .= '<th>Visitor Name</th>';
+        $table .= '<th>Task Name</th>';
         $table .= '<th>Purpose of Visit</th>';
-        $table .= '<th>Contact Person</th>';
-        
-        if ($role_id == 1) {
-            $table .= '<th>Actions</th>';
-        }
-    
+        $table .= '<th>Date</th>';
+        $table .= '<th>Actions</th>';
         $table .= '</tr>';
-        $table .= '</thead><tbody>';
-    
-        $count = 1;
-    
-        if (!empty($results)) {
-            foreach ($results as $result) {
-                $row_class = ($result['is_read'] == 0) ? 'highlight-read' : '';
-                $is_admin = $role_id == 1 ||$role_id==2 ||$role_id==3;
-                $edit_class = $is_admin ? 'edit-btn' : '';
-                $modal_attrs = $is_admin ? 'data-bs-toggle="modal" data-bs-target="#Edit-dish"' : '';
-    
-                $table .= '<tr class="' . $edit_class . ' ' . $row_class . '" ' . $modal_attrs . ' data-id="' . $result['id'] . '">';
-                $table .= '<td>' . $count++ . '</td>';
-                $table .= '<td>' . htmlspecialchars($result['visitor_name']) . '</td>';
-                $table .= '<td>' . htmlspecialchars($result['purpose_of_visit']) . '</td>';
-                $table .= '<td>' . htmlspecialchars($result['contact_person']) . '</td>';
-    
-                if ($role_id == 1) {
-                    $table .= '<td>
-                        <button class="btn btn-danger btn-sm delete-user" type="button" 
-                            data-bs-toggle="modal" 
-                            data-bs-target="#delete-enquiry"
-                            data-id="' . $result['id'] . '"
-                            title="Delete User">
-                            Delete
-                        </button>
-                    </td>';
-                }
-    
-                $table .= '</tr>';
-            }
-        } else {
-            $table .= '<tr><td colspan="7" class="text-center">No records found.</td></tr>';
+        $table .= '</thead>';
+        $table .= '<tbody>';
+        foreach ($results as $result) {
+             $dueDate = date('Y-m-d', strtotime($result['date']));
+    $today   = date('Y-m-d');
+    $rowClass = ($dueDate == $today) ? 'due-soon' : '';
+            $table .= '<tr class="' . $rowClass . '">';
+            $table .= '<td>' . $result['task_name'] . '</td>';
+            $table .= '<td>' . $result['purpose_of_visit'] . '</td>';
+            $table .= '<td>' . $result['date'] . '</td>';
+            $table .= '<td>';
+             
+            $table .= '<a class="btn btn-success edit-visitor mx-2" data-toggle="modal" data-target="#editModal" data-id="' . $result['id'] . '"><i class="fa fa-edit mx-1"></i>Edit</a>';
+            $table .= '<a  class="btn btn-danger enquiry-delete" data-toggle="modal" data-target="#delete-enquiry" data-id="' . $result['id'] . '"><i class="fa fa-trash mx-1"></i>Delete</a>';
+            $table .= '</td>';
+            $table .= '</tr>';
         }
-    
-        $table .= '</tbody></table>';
+        $table .= '</tbody>';
+        $table .= '</table>';
     
         echo $table;
     }
     
 
-    // public function searchproduct(){
-    //     $company_id = $this->session->userdata('logged_in_company_id');
-    //     $search = $this->input->post('value');
-    //     $role_id = $this->session->userdata('roleid'); // Role id of logged in user
-
-    //     if (!empty($search)) {
-    //         $this->db->select('*');
-    //         $this->db->from('tbl_enquiry'); // Use your actual table
-    //         $this->db->group_start();
-    //             $this->db->like('visitor_name', $search);
-    //             $this->db->or_like('purpose_of_visit', $search);
-    //             $this->db->or_like('contact_person', $search);
-    //         $this->db->group_end();
-    //         $this->db->where('company_id', $company_id);
-    //         $query = $this->db->get();
-    //         $results = $query->result_array();
-    //         // print_r($results);
-    
-    //         $table = '';
-    //         $table .= '<table class="table table-bordered mt-3 table-striped table-hover" id="dataTables-example">';
-    //         $table .= '<thead class="table-light">';
-    //         $table .= '<tr>';
-    //         $table .= '<th>Sl</th>';
-    //         $table .= '<th>Visitor Name</th>';
-    //         $table .= '<th>Purpose of Visit</th>';
-    //         $table .= '<th>Contact Person</th>';
-            
-    //         if ($role_id == 1) {
-    //             $table .= '<th>Actions</th>';
-    //         }
-    //         $table .= '</tr>';
-    //         $table .= '</thead>';
-    //         $table .= '<tbody>';
-            
-    //         $count = 1;
-            
-    //         if (!empty($results)) {
-    //             foreach ($results as $result) {
-    //                 $row_class = ($result['is_read'] == 0) ? 'highlight-read' : '';
-    //                 $is_admin = $role_id==1 || $role_id==2 || $role_id==3;
-    //                 $edit_class = $is_admin ? 'edit-btn' : '';
-    //                 $modal_attrs = $is_admin ? 'data-bs-toggle="modal" data-bs-target="#Edit-dish"' : '';
-            
-    //                 $table .= '<tr class="' . $edit_class . ' ' . $row_class . '" ' . $modal_attrs . ' data-id="' . $result['id'] . '">';
-    //                 $table .= '<td>' . $count++ . '</td>';
-    //                 $table .= '<td>' . htmlspecialchars($result['visitor_name']) . '</td>';
-    //                 $table .= '<td>' . htmlspecialchars($result['purpose_of_visit']) . '</td>';
-    //                 $table .= '<td>' . htmlspecialchars($result['contact_person']) . '</td>';
-            
-    //                 if ($role_id == 1) {
-    //                     $table .= '<td>
-    //                         <button class="btn btn-danger btn-sm delete-user" type="button" 
-    //                             data-bs-toggle="modal" 
-    //                             data-bs-target="#delete-enquiry"
-    //                             data-id="' . $result['id'] . '"
-    //                             title="Delete User">
-    //                             Delete
-    //                         </button>
-    //                     </td>';
-    //                 } else {
-    //                     $table .= '<tr><td class="text-center">No records found.</td></tr>';
-    //                 }
-            
-    //                 $table .= '</tr>';
-    //             }
-    //         } 
-            
-    //         $table .= '</tbody></table>';
-            
-    //         echo $table;
-            
-            
 
 
-
-    // } 
-
-    //     // echo $search;
-    // }
-
-
-    public function check_gmail($email)
-{
-    if (strpos($email, '@gmail.com') !== false) {
-        return true;
-    } else {
-        $this->form_validation->set_message('check_gmail', 'The Email must be a @gmail.com address.');
-        return false;
-    }
-}
 
 }
